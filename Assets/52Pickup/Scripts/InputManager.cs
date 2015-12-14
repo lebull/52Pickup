@@ -7,6 +7,7 @@ public class InputManager : MonoBehaviour {
     public bool longClick { get { return _longClick; } }
     public bool swipeDown { get { return _swipeDown; } }
     public bool swipeUp { get { return _swipeUp; } }
+    public bool swipeRight {  get { return Input.GetMouseButtonDown(1); } }
 
     private bool _shortClick;
     private bool _longClick;
@@ -20,6 +21,8 @@ public class InputManager : MonoBehaviour {
 
     private float longPressTimeThreshhold = 0.2f;
     private float swipeGestureRestTime = 0.2f;
+
+    private float swipeDeltaThreshhold = 0.1f;
 
     // Use this for initialization
     void Start () {
@@ -59,23 +62,41 @@ public class InputManager : MonoBehaviour {
             _longClick = true;
         }
 
+ 
 
         //Swipe gesture
-        if(Time.time - _swipeLastMovedTime > swipeGestureRestTime)
+        if (Time.time - _swipeLastMovedTime > swipeGestureRestTime)
         {
+            Debug.Log(Input.GetAxis("VSwipe"));
             //Swipe down
-            if(Input.GetAxis("Swipe") < 0)
+            if (-Input.GetAxis("VSwipe") > swipeDeltaThreshhold)
             {
                 _swipeDown = true;
             }
 
             //Swipe Up
-            if (Input.GetAxis("Swipe") > 0)
+            if (Input.GetAxis("VSwipe") > swipeDeltaThreshhold)
             {
                 _swipeUp = true;
             }
+
+            /*
+            //Swipe Left
+            if (Input.GetAxis("HSwipe") < swipeDeltaThreshhold)
+            {
+                _swipeDown = true;
+            }*/
+
+            //Swipe Right
+            if (Input.GetAxis("HSwipe") > swipeDeltaThreshhold)
+            {
+                //_swipeUp = true;
+            }
         }
-        if(Input.GetAxis("Swipe") != 0)
+
+
+
+        if(Mathf.Abs(Input.GetAxis("VSwipe")) > swipeDeltaThreshhold || Mathf.Abs(Input.GetAxis("HSwipe")) > swipeDeltaThreshhold)
         {
             _swipeLastMovedTime = Time.time;
         }

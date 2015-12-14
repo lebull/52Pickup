@@ -13,6 +13,7 @@ public class CardDeck : MonoBehaviour {
 
     [SerializeField] GameObject cardSetManager;
 
+    public GameObject parentHand;
 
     public List<int> cards;
 
@@ -188,4 +189,18 @@ public class CardDeck : MonoBehaviour {
         GetComponent<HoverHandle>().inverted = !GetComponent<HoverHandle>().inverted;
     }
 
+    void removeFromHand()
+    {
+        parentHand.GetComponent<CardHand>().removeCardWithReference(gameObject);
+        transform.parent = null;
+    }
+
+    void OnDestroy()
+    {
+        if(parentHand != null)
+        {
+            removeFromHand();
+        }
+
+    }
 }

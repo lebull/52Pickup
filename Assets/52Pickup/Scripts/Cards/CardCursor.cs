@@ -83,7 +83,7 @@ public class CardCursor : MonoBehaviour {
                 RaycastHit handHit = FindObjectOfType<RaycastManager>().raycastHand();
                 if (handHit.collider)
                 {
-                    handHit.collider.gameObject.GetComponent<CardHand>().addCard(heldObject.GetComponent<CardDeck>().draw());
+                    handHit.collider.gameObject.GetComponent<CardHand>().addDeck(heldObject);
                 }
 
                 RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
@@ -105,7 +105,7 @@ public class CardCursor : MonoBehaviour {
         }
 
         //Right swipe
-        if(Input.GetMouseButtonDown(1))
+        if(inputManager.swipeRight)
         {
             if (heldObject)
             {

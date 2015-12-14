@@ -39,10 +39,12 @@ public class HoverHandle : MonoBehaviour {
                     origin + (originRot * targetPosition), //Multiply, makes the offset relative to the target with respect to orientation.
                     speedMod * Time.deltaTime);
 
+                /*
                 transform.rotation = Quaternion.Lerp(
                     transform.rotation,
                     originRot * Quaternion.Euler(-90, 0, 0) * rotationOffset * offsetForInversion,
                     angSpeedMod * Time.deltaTime);
+                    */
 
             }
             else //No parent
@@ -52,11 +54,12 @@ public class HoverHandle : MonoBehaviour {
                     targetPosition, //Multiply, makes the offset relative to the target with respect to orientation.
                     speedMod * Time.deltaTime);
 
-                transform.rotation = Quaternion.Lerp(
-                    transform.rotation,
-                    Quaternion.identity * rotationOffset * offsetForInversion,
-                    angSpeedMod * Time.deltaTime);
             }
+
+            transform.rotation = Quaternion.Lerp(
+                transform.rotation,
+                Quaternion.identity * rotationOffset * offsetForInversion,
+                angSpeedMod * Time.deltaTime);
         }
 	}
 

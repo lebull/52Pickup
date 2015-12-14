@@ -12,44 +12,14 @@ public class CardHand : MonoBehaviour {
     public List<GameObject> heldCards;
 
     private int maxCards = 52;
-    private float maxFanAngle = (200f);
-    private float fanRadius = 0.15f;
+    private float maxFanAngle = (270f);
+    private float fanRadius = 0.04f;
     private float depthPadding = 0.01f;
 
 	// Update is called once per frame
 	void Update () {
-        //updateAimObject();
-
-        //Check for inputs.
-        /*
-        if (Input.GetMouseButtonDown(0) && aimObject != null)
-        {
-            heldCards.Add(aimObject);
-            updateCardPositions();
-            aimObject.transform.parent = gameObject.transform;
-        }*/
+        updateCardPositions();
     }
-    /*
-    void updateAimObject()
-    {
-        //http://answers.unity3d.com/questions/252847/check-if-raycast-hits-layer.html
-
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        Debug.DrawLine(ray.origin, ray.origin + ray.direction * 10, Color.green);
-
-        // Get our aim object
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, LayerMask.GetMask("Card")))
-        {
-            _aimObject = hit.transform.gameObject;
-        }
-        else
-        {
-            _aimObject = null;
-        }
-    }*/
-
 
     //Tell the cards where they are supposed to go.
     void updateCardPositions()
@@ -73,9 +43,20 @@ public class CardHand : MonoBehaviour {
             float rightOffset = Mathf.Cos(chordAng * Mathf.Deg2Rad);
             float depthOffset = depthPadding * i;
 
-            Vector3 positionOffset = new Vector3(upOffset, rightOffset, depthOffset) * fanRadius;
+            Vector3 positionOffset = new Vector3(upOffset, rightOffset, depthOffset) * fanRadius 
+                * Mathf.Sqrt(heldCards.Count); //Expand the radius based on size.
 
-            heldCards[i].GetComponent<HoverHandle>().setHoverPosition(transform.rotation * positionOffset, chordAng);
+            Quaternion angleOffset = transform.rotation * Quaternion.Euler(90, 0, 0) * Quaternion.Euler(0, 180- chordAng , 0);
+
+            heldCards[i].GetComponent<HoverHandle>().setHoverPosition(positionOffset, angleOffset);
+        }
+    }
+
+    public void addDeck(GameObject cardObject)
+    {
+        while(cardObject.GetComponent<CardDeck>().cards.Count > 0)
+        {
+            addCard(cardObject.GetComponent<CardDeck>().draw());
         }
     }
 
@@ -84,5 +65,18 @@ public class CardHand : MonoBehaviour {
         heldCards.Add(cardObject);
         updateCardPositions();
         cardObject.transform.parent = gameObject.transform;
+        if (cardObject.GetComponent<CardDeck>().inverted)
+        {
+            cardObject.GetComponent<CardDeck>().flip();
+        }
+
+        //Set the parent to me
+        cardObject.GetComponent<CardDeck>().parentHand = gameObject;
+    }
+
+    public void removeCardWithReference(GameObject cardDeck)
+    {
+        heldCards.Remove(cardDeck);
+        updateCardPositions();
     }
 }
