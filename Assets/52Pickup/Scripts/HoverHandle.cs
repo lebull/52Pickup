@@ -39,13 +39,6 @@ public class HoverHandle : MonoBehaviour {
                     origin + (originRot * targetPosition), //Multiply, makes the offset relative to the target with respect to orientation.
                     speedMod * Time.deltaTime);
 
-                /*
-                transform.rotation = Quaternion.Lerp(
-                    transform.rotation,
-                    originRot * Quaternion.Euler(-90, 0, 0) * rotationOffset * offsetForInversion,
-                    angSpeedMod * Time.deltaTime);
-                    */
-
             }
             else //No parent
             {
@@ -63,15 +56,6 @@ public class HoverHandle : MonoBehaviour {
         }
 	}
 
-    /// <summary>
-    /// DEPRICATE THIS SHIT
-    /// </summary>
-    /// <param name="pos"></param>
-    /// <param name="rotation"></param>
-    public void setHoverPosition(Vector3 pos, float rotation)
-    {
-        setHoverPosition(pos, Quaternion.Euler(0, rotation, 0));
-    }
 
     public void setHoverPosition(Vector3 pos, Quaternion rotation)
     {
@@ -79,11 +63,13 @@ public class HoverHandle : MonoBehaviour {
         hover = true;
         GetComponent<Rigidbody>().isKinematic = true;
         rotationOffset = rotation;
+        GetComponent<Collider>().isTrigger = true;
     }
 
     public void releaseFromHover()
     {
         hover = false;
         GetComponent<Rigidbody>().isKinematic = false;
+        GetComponent<Collider>().isTrigger = false;
     }
 }

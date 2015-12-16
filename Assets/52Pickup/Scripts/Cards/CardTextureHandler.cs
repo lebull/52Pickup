@@ -3,25 +3,43 @@ using System.Collections;
 
 public class CardTextureHandler : MonoBehaviour {
 
+    public int deletemeCardIndex;
+
 	// Use this for initialization
 	void Start () {
         //setCardTextureByIndex(0);
     }
 
-    public void setCardTextureByIndex(int i)
+    public void setCardTextureByIndex(int cardIndex)
     {
-        CardSetManager cardSetManager = GameObject.Find("CardSetManager").GetComponent<CardSetManager>();
+        deletemeCardIndex = cardIndex;
 
-        if(i > cardSetManager.cardCount)
+        CardSetManager cardSetManager = FindObjectOfType<CardSetManager>();
+
+        if(cardIndex > cardSetManager.cardCount)
         {
             throw new System.Exception("HoverHandle index greater than size of card face texture");
         }
 
-        float x = (float)i / cardSetManager.CardTextureDimensions.x;
-        float y = (float)i / cardSetManager.CardTextureDimensions.y;
+        GameObject cardFace = transform.FindChild("CardFace").gameObject;
 
-        //TODO: This is opting the card out of batching
-        //http://docs.unity3d.com/ScriptReference/Mesh-uv.html
-        transform.FindChild("CardFace").GetComponent<Renderer>().material.SetTextureOffset("_MainTex", new Vector2(x, y));
+        
+        Vector2 textureCenter = new Vector2(
+            0.5f + (int)(cardIndex % cardSetManager.CardTextureDimensions.x),
+            0.5f + (int)(cardIndex / cardSetManager.CardTextureDimensions.x)
+        );
+
+        Mesh mesh = GetComponent<MeshFilter>().mesh;
+        Vector3[] vertices = cardFace.GetComponent<MeshFilter>().mesh.vertices;
+        Vector2[] uvs = new Vector2[vertices.Length];
+
+        for (int i = 0; i < uvs.Length; i++)
+        {
+            uvs[i] = new Vector2(
+                textureCenter.x + (vertices[i].x),
+                textureCenter.y + (vertices[i].y)
+                );
+        }
+        cardFace.GetComponent<MeshFilter>().mesh.uv = uvs;
     }
 }

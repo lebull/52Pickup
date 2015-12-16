@@ -3,104 +3,118 @@ using System.Collections;
 
 public class InputManager : MonoBehaviour {
 
-    public bool shortClick { get { return _shortClick; } }
-    public bool longClick { get { return _longClick; } }
-    public bool swipeDown { get { return _swipeDown; } }
-    public bool swipeUp { get { return _swipeUp; } }
-    public bool swipeRight {  get { return Input.GetMouseButtonDown(1); } }
+    public bool debug;
 
-    private bool _shortClick;
-    private bool _longClick;
-    private bool _swipeDown;
-    private bool _swipeUp;
+    public bool shortClick { get; private set; }
+    public bool longClick { get; private set; }
+    public bool swipeDown { get; private set; }
+    public bool swipeUp { get; private set; }
+    public bool swipeRight { get; private set; }
 
-    private bool _clickPressed;
-    private float _clickPressedStartTime;
 
-    private float _swipeLastMovedTime;
+    private float longPressTimeThreshhold = 0.5f;
+    private float swipeDeltaThreshhold = 50f;
 
-    private float longPressTimeThreshhold = 0.2f;
-    private float swipeGestureRestTime = 0.2f;
-
-    private float swipeDeltaThreshhold = 0.1f;
-
+    private Vector3 mousePosStart;
+    private float mousePressStartTime;
     // Use this for initialization
-    void Start () {
-        _shortClick = false;
-        _longClick = false;
-        _swipeDown = false;
-        _swipeUp = false;
 
-        _clickPressed = false;
+    Vector3 getMousePos()
+    {
+        return Input.mousePosition;
+
+
+        /*
+        return new Vector3(
+            Input.GetAxis("HSwipe"),
+            Input.GetAxis("VSwipe")    
+        );*/
     }
-	
-	// Update is called once per frame
-	void Update () {
 
-        _shortClick = false;
-        _longClick = false;
-        _swipeDown = false;
-        _swipeUp = false;
+    void newUpdate()
+    {
+        shortClick = false;
+        longClick = false;
+        swipeDown = false;
+        swipeUp = false;
+        swipeRight = false;
 
-        if (Input.GetMouseButtonDown(0) && _clickPressed == false)
+        //Move this with the rest, future me.
+        //swipeRight = Input.GetMouseButtonDown(1);
+
+        if (Input.GetMouseButtonDown(0) )
         {
-            _clickPressedStartTime = Time.time;
-            _clickPressed = true;
+            //Start tracking our touches
+            mousePosStart = getMousePos();
+            mousePressStartTime = Time.time;
         }
 
-        float pressedTime = Time.time - _clickPressedStartTime;
-
-        if (_clickPressed == true && Input.GetMouseButtonUp(0))
+        if (Input.GetMouseButton(0))
         {
-            _clickPressed = false;
-            _shortClick = true;
+            //Track our touches however we need to here.
+            Debug.Log(Input.mousePosition);
         }
 
-        if (_clickPressed == true && pressedTime > longPressTimeThreshhold)
+        if (Input.GetMouseButtonUp(0))
         {
-            _clickPressed = false;
-            _longClick = true;
-        }
+            //Figure out what kind of input it was
+            float mousePressTime = Time.time - mousePressStartTime;
+            Vector3 mouseMovementDelta = mousePosStart - getMousePos();
 
- 
 
-        //Swipe gesture
-        if (Time.time - _swipeLastMovedTime > swipeGestureRestTime)
-        {
-            Debug.Log(Input.GetAxis("VSwipe"));
-            //Swipe down
-            if (-Input.GetAxis("VSwipe") > swipeDeltaThreshhold)
+            //Presses
+            if(mouseMovementDelta.magnitude < swipeDeltaThreshhold)
             {
-                _swipeDown = true;
+                //Short press
+                if (mousePressTime > longPressTimeThreshhold)
+                {
+                    longClick = true;
+                }
+
+                //Long Press
+                else
+                {
+                    shortClick = true;
+                }
             }
-
-            //Swipe Up
-            if (Input.GetAxis("VSwipe") > swipeDeltaThreshhold)
+            //Swipes
+            else
             {
-                _swipeUp = true;
-            }
-
-            /*
-            //Swipe Left
-            if (Input.GetAxis("HSwipe") < swipeDeltaThreshhold)
-            {
-                _swipeDown = true;
-            }*/
-
-            //Swipe Right
-            if (Input.GetAxis("HSwipe") > swipeDeltaThreshhold)
-            {
-                //_swipeUp = true;
+                //Horizontal swipe
+                if(Mathf.Abs(mouseMovementDelta.x) > Mathf.Abs(mouseMovementDelta.y))
+                {
+                    swipeRight = true;
+                }
+                else//Vertical swipe
+                {
+                    if(mouseMovementDelta.y < 0) //Yes, it's backwards.  Mouse vert is inverted.
+                    {
+                        swipeUp = true;
+                    }
+                    else
+                    {
+                        swipeDown = true;
+                    }
+                }
             }
         }
+    }
+    
+    // Update is called once per frame
+    void Update()
+    {
 
-
-
-        if(Mathf.Abs(Input.GetAxis("VSwipe")) > swipeDeltaThreshhold || Mathf.Abs(Input.GetAxis("HSwipe")) > swipeDeltaThreshhold)
+        if (debug)
         {
-            _swipeLastMovedTime = Time.time;
+            shortClick = Input.GetKeyDown(KeyCode.LeftControl);
+            longClick = Input.GetKeyDown(KeyCode.Space);
+            swipeDown = Input.GetKeyDown(KeyCode.S);
+            swipeUp = Input.GetKeyDown(KeyCode.W);
+            swipeRight = Input.GetKeyDown(KeyCode.D);
         }
-
-        
+        else
+        {
+            newUpdate();
+        }
     }
 }

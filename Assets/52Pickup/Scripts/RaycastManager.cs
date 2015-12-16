@@ -5,10 +5,13 @@ public class RaycastManager : MonoBehaviour {
 
     public bool debug;
 
-    [SerializeField]
-    private GameObject _aimObject;
-    public GameObject aimObject { get { return _aimObject; } }
+    public AimMode aimMode;
 
+    public enum AimMode
+    {
+        mouse,
+        gaze
+    }
 
 
     // Use this for initialization
@@ -23,34 +26,45 @@ public class RaycastManager : MonoBehaviour {
 
     public RaycastHit raycastHand()
     {
-        return updateAimObject(LayerMask.GetMask("CardHand"));
+        return getDefaultRaycastFromMask(LayerMask.GetMask("CardHand"));
     }
 
     public RaycastHit raycastTable()
     {
-        return updateAimObject(LayerMask.GetMask("Table"));
+        return getDefaultRaycastFromMask(LayerMask.GetMask("Table"));
     }
 
     public RaycastHit raycastCard()
     {
-        /*
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        Debug.DrawLine(ray.origin, ray.origin + ray.direction * 10, Color.green);
-
-        // Get our aim object
-        Physics.Raycast(ray, out hit, Mathf.Infinity, LayerMask.GetMask("Card"));
-        return hit;*/
-        return updateAimObject(LayerMask.GetMask("Card"));
+        return getDefaultRaycastFromMask(LayerMask.GetMask("Card"));
 
     }
 
-    RaycastHit updateAimObject(LayerMask mask)
+    public RaycastHit raycastGeneral()
+    {
+        return getDefaultRaycastFromMask(~LayerMask.GetMask("IgnoreRaycast"));
+
+    }
+
+    RaycastHit getDefaultRaycastFromMask(LayerMask mask)
     {
         //http://answers.unity3d.com/questions/252847/check-if-raycast-hits-layer.html
 
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Ray ray;
+
+        switch (aimMode){
+            case AimMode.gaze:
+                ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
+                break;
+            case AimMode.mouse:
+                ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                break;
+            default:
+                ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
+                break;
+        }
+
+        
         RaycastHit hit;
 
         if (debug)

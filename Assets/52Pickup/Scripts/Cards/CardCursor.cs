@@ -123,6 +123,17 @@ public class CardCursor : MonoBehaviour {
 
     void pickUpObject(GameObject pickupObject)
     {
+        if (pickupObject.transform && pickupObject.transform.parent)
+        {
+            pickupObject.transform.parent = null;
+        }
+        
+        if(pickupObject.GetComponent<CardDeck>())
+        {
+            pickupObject.GetComponent<CardDeck>().parentHand = null;
+        }
+
+
         heldObject = pickupObject;
         heldObjectOrigionalLayer = heldObject.layer;
         heldObject.layer = LayerMask.NameToLayer("IgnoreRaycast");

@@ -9,6 +9,17 @@ public class Tester : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 
+        spawnDeck();
+        
+    }
+	
+	// Update is called once per frame
+	void Update () {
+	
+	}
+
+    void spawnDeck()
+    {
         CardSetManager cardSetManager = FindObjectOfType<CardSetManager>();
 
         List<int> newCards = new List<int>();
@@ -24,11 +35,5 @@ public class Tester : MonoBehaviour {
         newCardDeck.GetComponent<CardDeck>().shuffleDeck();
         newCardDeck.GetComponent<CardDeck>().flip();
         newCardDeck.transform.rotation *= Quaternion.Euler(0, 0, 180);
-        
     }
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
 }
