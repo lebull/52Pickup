@@ -51,10 +51,14 @@ namespace UnityStandardAssets.Utility
             // read input from mouse or mobile controls
             float inputH;
             float inputV;
+
             if (relative)
             {
-                inputH = CrossPlatformInputManager.GetAxis("Mouse X");
-                inputV = CrossPlatformInputManager.GetAxis("Mouse Y");
+                //inputH = CrossPlatformInputManager.GetAxis("Mouse X");
+                //inputV = CrossPlatformInputManager.GetAxis("Mouse Y");
+
+                inputH = Input.GetAxis("HSwipe")*0.1f;
+                inputV = -Input.GetAxis("VSwipe")*0.1f;
 
                 // wrap values to avoid springing quickly the wrong way from positive to negative
                 if (m_TargetAngles.y > 180)
@@ -113,7 +117,6 @@ namespace UnityStandardAssets.Utility
 
             // smoothly interpolate current values to target angles
             m_FollowAngles = Vector3.SmoothDamp(m_FollowAngles, m_TargetAngles, ref m_FollowVelocity, dampingTime);
-
 
             // update the actual gameobject's rotation
             transform.localRotation = m_OriginalRotation * Quaternion.Euler(-m_FollowAngles.x, m_FollowAngles.y, 0);

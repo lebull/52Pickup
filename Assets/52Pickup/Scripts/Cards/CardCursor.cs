@@ -5,10 +5,14 @@ public class CardCursor : MonoBehaviour {
 
     InputManager inputManager;
 
-    private float hitOffset = 0.02f;
-    private float hoverOffset = 0.2f;
+    public GameObject defaultCursorLocation;
 
-    private GameObject heldObject;
+    private float hitOffset = 0.02f;
+    private float hoverOffset = 0.1f;
+
+    public GameObject heldObject;
+
+
     private int heldObjectOrigionalLayer;
 
 	// Use this for initialization
@@ -20,13 +24,15 @@ public class CardCursor : MonoBehaviour {
     void Update() {
 
         transform.rotation = transform.parent.rotation;
-
-        //Swipe Down
         updatePositionToGaze();
 
-        //Pick up card
+
+
+        //Swipe Down
+        
         if (inputManager.swipeDown)
         {
+            //Pick up card
             RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
             if (cardHit.collider
                 && cardHit.collider.gameObject.layer == LayerMask.NameToLayer("Card")
@@ -48,6 +54,7 @@ public class CardCursor : MonoBehaviour {
         {
             if (heldObject != null)
             {
+                //Draw from the bottom of the deck.
                 heldObject.GetComponent<CardDeck>().draw(true);
             }
         }
@@ -67,31 +74,56 @@ public class CardCursor : MonoBehaviour {
         //Short press
         if (inputManager.shortClick)
         {
-
-
             //If we aren't holding a deck, try to pick up a deck.
             if (heldObject == null)
             {
-                RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
-                if(cardHit.collider && cardHit.collider.gameObject.GetComponent<CardDeck>())
-                {
-                    pickUpObject(cardHit.collider.gameObject);
-                }
-            }else if(heldObject != null
-                && heldObject.GetComponent<CardDeck>() != null)
-            {
+
+                //If we're pointing at a hand
                 RaycastHit handHit = FindObjectOfType<RaycastManager>().raycastHand();
                 if (handHit.collider)
                 {
-                    handHit.collider.gameObject.GetComponent<CardHand>().addDeck(heldObject);
+                    handHit.collider.gameObject.GetComponent<CardHand>().condenseAllCardsToDeck();
+                    pickUpObject(handHit.collider.gameObject.GetComponent<CardHand>().heldCards[0]);
+
+                }
+                else
+                {
+                    //If we are pointing at a CardDeck
+                    RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
+                    if (cardHit.collider && cardHit.collider.gameObject.GetComponent<CardDeck>())
+                    {
+                        pickUpObject(cardHit.collider.gameObject);
+                    }
                 }
 
-                RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
 
-                //If we're pointing at a deck, send to this deck
+            }else if(heldObject != null
+                && heldObject.GetComponent<CardDeck>() != null)
+            {
+                //If we're pointing at a hand
+                RaycastHit handHit = FindObjectOfType<RaycastManager>().raycastHand();
+                if (handHit.collider)
+                {
+                    handHit.collider.gameObject.GetComponent<CardHand>().addCard(heldObject);
+                }
+
+                //If we're pointing at a CardDeck
+                RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
                 if (cardHit.collider && cardHit.collider.gameObject != heldObject)
                 {
-                    heldObject.GetComponent<CardDeck>().sendToDeck(cardHit.collider.gameObject);
+                    //If it's in a hand
+                    if(cardHit.collider.gameObject.GetComponent<CardDeck>().parentHand != null)
+                    {
+                        //Add to the hand in front of the deck
+                        CardHand hand = cardHit.collider.gameObject.GetComponent<CardDeck>().parentHand.GetComponent<CardHand>();
+                        hand.addCard(heldObject, cardHit.collider.gameObject);
+                    }
+                    else
+                    {
+                        //Just add it to the deck
+                        heldObject.GetComponent<CardDeck>().sendToDeck(cardHit.collider.gameObject);
+                    }
+                    
                     releaseObject();
                 }
                 else //If we're not really pointint at anything, just drop it.
@@ -99,9 +131,7 @@ public class CardCursor : MonoBehaviour {
                     heldObject.GetComponent<HoverHandle>().releaseFromHover();
                     releaseObject();
                 }
-                
             }
-
         }
 
         //Right swipe
@@ -117,41 +147,57 @@ public class CardCursor : MonoBehaviour {
         transform.rotation = transform.parent.rotation;
         if (heldObject != null && heldObject.GetComponent<HoverHandle>() != null)
         {
-            heldObject.GetComponent<HoverHandle>().setHoverPosition(transform.position + transform.up * hoverOffset, transform.rotation);
+            heldObject.GetComponent<HoverHandle>().setHoverPosition(transform.position + Vector3.up * hoverOffset, transform.rotation);
         }
     }
 
     void pickUpObject(GameObject pickupObject)
     {
-        if (pickupObject.transform && pickupObject.transform.parent)
-        {
-            pickupObject.transform.parent = null;
-        }
-        
-        if(pickupObject.GetComponent<CardDeck>())
-        {
-            pickupObject.GetComponent<CardDeck>().parentHand = null;
-        }
-
+        //If it's in a hand, it needs to be removed
+        pickupObject.GetComponent<CardDeck>().removeFromHand();
 
         heldObject = pickupObject;
         heldObjectOrigionalLayer = heldObject.layer;
+        //heldObject.transform.parent = transform;
         heldObject.layer = LayerMask.NameToLayer("IgnoreRaycast");
     }
 
     void releaseObject()
     {
+        //Reset the layer in case it needs to be raycasted
         heldObject.layer = heldObjectOrigionalLayer;
+
+        //If we are still the parent, remove it from our transform hiearchy.
+        if(heldObject.transform.parent == transform)
+        {
+            heldObject.transform.parent = null;
+        }
+
         heldObject = null;
     }
 
     void updatePositionToGaze()
     {
-        RaycastHit hit = FindObjectOfType<RaycastManager>().raycastTable();
+        RaycastHit hit = FindObjectOfType<RaycastManager>().raycastGeneral();
         if (hit.collider)
         {
+            //Hide cursor if we hit a card.
+            if(hit.collider.gameObject.layer == LayerMask.NameToLayer("Card"))
+            {
+                GetComponent<MeshRenderer>().enabled = false;
+            }
+            else
+            {
+                GetComponent<MeshRenderer>().enabled = true;
+            }
+            
             transform.position = hit.point + hit.normal*hitOffset;
             transform.rotation = Quaternion.Euler(hit.normal);
+        }
+        else
+        {
+            GetComponent<MeshRenderer>().enabled = true;
+            transform.position = defaultCursorLocation.transform.position;
         }
     }
 }

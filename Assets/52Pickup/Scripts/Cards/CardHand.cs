@@ -8,17 +8,43 @@ public class CardHand : MonoBehaviour {
     [SerializeField]
     private GameObject _aimObject;
     public GameObject aimObject { get { return _aimObject; } }
-
+    public bool condensed { get { return heldCards.Count == 1;  } }
     public List<GameObject> heldCards;
 
     private int maxCards = 52;
     private float maxFanAngle = (270f);
     private float fanRadius = 0.04f;
     private float depthPadding = 0.01f;
+    private float handCenterOffset = 0.15f;
 
 	// Update is called once per frame
 	void Update () {
-        updateCardPositions();
+        purgeNullSpots();
+    }
+
+
+    void purgeNullSpots()
+    {
+
+        bool updated = false;
+        int i = 0;
+        while (i < heldCards.Count)
+        {
+            if (heldCards[i] == null)
+            {
+                heldCards.RemoveAt(i);
+                updated = true;
+            }
+            else
+            {
+                i++;
+            }
+
+            if (updated)
+            {
+                updateCardPositions();
+            }
+        }
     }
 
     //Tell the cards where they are supposed to go.
@@ -37,46 +63,90 @@ public class CardHand : MonoBehaviour {
         //For each card in our hand
         for(int i = 0; i < heldCards.Count; i++)
         {
-            //Angle in the circle
-            float chordAng = -realFanAng * (((float)(i + 0.5) / heldCards.Count) - 0.5f);
-            float upOffset = Mathf.Sin(chordAng * Mathf.Deg2Rad);
-            float rightOffset = Mathf.Cos(chordAng * Mathf.Deg2Rad);
-            float depthOffset = depthPadding * i;
+            if(heldCards[i] == null)
+            {
+                heldCards.RemoveAt(i);
+            }
+            else
+            {
+                //Angle in the circle
+                float chordAng = -realFanAng * (((float)(i + 0.5) / heldCards.Count) - 0.5f);
+                float upOffset = Mathf.Sin(chordAng * Mathf.Deg2Rad);
+                float rightOffset = Mathf.Cos(chordAng * Mathf.Deg2Rad);
+                float depthOffset = depthPadding * i;
 
-            Vector3 positionOffset = new Vector3(upOffset, rightOffset, depthOffset) * fanRadius 
-                * Mathf.Sqrt(heldCards.Count); //Expand the radius based on size.
+                Vector3 positionOffset = Vector3.up * handCenterOffset + new Vector3(upOffset, rightOffset, depthOffset) * fanRadius
+                    * Mathf.Sqrt(heldCards.Count); //Expand the radius based on size.
 
-            Quaternion angleOffset = transform.rotation * Quaternion.Euler(90, 0, 0) * Quaternion.Euler(0, 180- chordAng , 0);
+                Quaternion angleOffset = transform.rotation * Quaternion.Euler(90, 0, 0) * Quaternion.Euler(0, 180 - chordAng, 0);
 
-            heldCards[i].GetComponent<HoverHandle>().setHoverPosition(positionOffset, angleOffset);
+                heldCards[i].GetComponent<HoverHandle>().setHoverPosition(positionOffset, angleOffset);
+            }
         }
     }
 
-    public void addDeck(GameObject cardObject)
+
+    public void addCard(GameObject addCardObject, GameObject aheadOfExistingObject = null)
     {
-        while(cardObject.GetComponent<CardDeck>().cards.Count > 0)
+        //If no existing object (probably adding via the marker), add to the back
+        if(aheadOfExistingObject == null)
         {
-            addCard(cardObject.GetComponent<CardDeck>().draw());
+            heldCards.Insert(0, addCardObject);
         }
-    }
+        else // Add it ahead of the existing card.
+        {
+            int insertIndex = heldCards.IndexOf(aheadOfExistingObject) + 1;
+            heldCards.Insert(insertIndex, addCardObject);
+        }
 
-    public void addCard(GameObject cardObject)
-    {
-        heldCards.Add(cardObject);
+        //We wana let the chillens spread out.
+        while (addCardObject.GetComponent<CardDeck>().cards.Count > 1)
+        {
+            //Add children in front of me.
+            addCard(addCardObject.GetComponent<CardDeck>().draw(), addCardObject);
+        }
+
+        if (addCardObject.GetComponent<CardDeck>().inverted)
+        {
+            addCardObject.GetComponent<CardDeck>().flip();
+        }
+        addCardObject.transform.parent = gameObject.transform;
+        addCardObject.GetComponent<CardDeck>().parentHand = gameObject;
         updateCardPositions();
-        cardObject.transform.parent = gameObject.transform;
-        if (cardObject.GetComponent<CardDeck>().inverted)
-        {
-            cardObject.GetComponent<CardDeck>().flip();
-        }
-
-        //Set the parent to me
-        cardObject.GetComponent<CardDeck>().parentHand = gameObject;
     }
+
 
     public void removeCardWithReference(GameObject cardDeck)
     {
         heldCards.Remove(cardDeck);
         updateCardPositions();
+    }
+
+    public void condenseAllCardsToDeck()
+    {
+        if (heldCards.Count > 0)
+        {
+            GameObject newCard = (GameObject)Instantiate(FindObjectOfType<CardSetManager>().cardPrefab, transform.position, transform.rotation);
+
+            List<int> cardIndexes = new List<int>();
+
+            while(heldCards.Count > 0)
+            {
+                GameObject card = heldCards[0];
+                cardIndexes.AddRange(card.GetComponent<CardDeck>().cards);
+                heldCards.Remove(card);
+                Destroy(card);
+                
+            }
+
+            newCard.GetComponent<CardDeck>().setCards(cardIndexes);
+
+            newCard.transform.parent = gameObject.transform;
+            newCard.GetComponent<CardDeck>().parentHand = gameObject;
+            heldCards = new List<GameObject>() { newCard };
+
+            updateCardPositions();
+        }
+
     }
 }

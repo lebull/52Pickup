@@ -9,8 +9,6 @@ using System.Collections.Generic;
 
 public class CardDeck : MonoBehaviour {
 
-    public float deckThicknessMod = 1;
-
     [SerializeField] GameObject cardSetManager;
 
     public GameObject parentHand;
@@ -82,7 +80,7 @@ public class CardDeck : MonoBehaviour {
 
         //Calculate new deck position
         transform.position = transform.position
-            + transform.up * (cardHeight * 0.5f * deckThicknessMod) * negativeIfBottom;
+            + transform.up * (cardHeight * 0.5f) * negativeIfBottom;
 
         int indexToRemove;
         if (fromBottom == inverted)
@@ -108,6 +106,7 @@ public class CardDeck : MonoBehaviour {
             newCard.GetComponent<CardDeck>().flip();
         }
 
+        /*
         //If new count == 0, destroy myself.
         if(newCardCount == 0)
         {
@@ -115,7 +114,17 @@ public class CardDeck : MonoBehaviour {
         }
         else {
             refreshCardFace();
+        }*/
+
+        if (newCardCount == 0)
+        {
+            return gameObject;
         }
+        else
+        {
+            refreshCardFace();
+        }
+
         return newCard;
     }
 
@@ -126,9 +135,6 @@ public class CardDeck : MonoBehaviour {
 
     public void addCards(List<int> addCards, bool toBottom = false)
     {
-        //TODO:  Should depend on which side is top.  For now, add to the end.
-
-        Debug.Log(toBottom);
         if (inverted != toBottom)
         {
             addCards.AddRange(cards);
@@ -145,6 +151,16 @@ public class CardDeck : MonoBehaviour {
     {
         CardSetManager cardSetManagerScript = cardSetManager.GetComponent<CardSetManager>();
         float cardHeight = cardSetManagerScript.cardPrefab.transform.localScale.y;
+
+        if(cards.Count == 1)
+        {
+            //cardHeight = 0;
+            GetComponent<MeshRenderer>().enabled = false;
+        }
+        else
+        {
+            GetComponent<MeshRenderer>().enabled = true;
+        }
 
         transform.localScale = new Vector3(
             transform.localScale.x,
@@ -186,13 +202,17 @@ public class CardDeck : MonoBehaviour {
 
     public void flip()
     {
-        GetComponent<HoverHandle>().inverted = !GetComponent<HoverHandle>().inverted;
+        GetComponent<HoverHandle>().flip();
     }
 
-    void removeFromHand()
+    public void removeFromHand()
     {
-        parentHand.GetComponent<CardHand>().removeCardWithReference(gameObject);
-        transform.parent = null;
+        if(parentHand != null)
+        {
+            parentHand.GetComponent<CardHand>().removeCardWithReference(gameObject);
+            transform.parent = null;
+        }
+
     }
 
     void OnDestroy()

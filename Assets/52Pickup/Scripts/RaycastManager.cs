@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class RaycastManager : MonoBehaviour {
 
@@ -13,15 +14,16 @@ public class RaycastManager : MonoBehaviour {
         gaze
     }
 
+    private Dictionary<LayerMask, RaycastHit> raycastCache;
 
     // Use this for initialization
     void Start () {
-	
+        raycastCache = new Dictionary<LayerMask, RaycastHit>();
 	}
 	
 	// Update is called once per frame
 	void Update () {
-	
+        raycastCache.Clear();
 	}
 
     public RaycastHit raycastHand()
@@ -43,18 +45,22 @@ public class RaycastManager : MonoBehaviour {
     public RaycastHit raycastGeneral()
     {
         return getDefaultRaycastFromMask(~LayerMask.GetMask("IgnoreRaycast"));
-
     }
 
-    RaycastHit getDefaultRaycastFromMask(LayerMask mask)
+    RaycastHit getDefaultRaycastFromMask(LayerMask mask, bool ignoreCache = false)
     {
+        //Grab it from the cache if we can.
+        if (ignoreCache == false && raycastCache.ContainsKey(mask)){
+            return raycastCache[mask];
+        }
+
         //http://answers.unity3d.com/questions/252847/check-if-raycast-hits-layer.html
 
         Ray ray;
 
         switch (aimMode){
             case AimMode.gaze:
-                ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
+                ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height*3 / 5));
                 break;
             case AimMode.mouse:
                 ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -73,6 +79,9 @@ public class RaycastManager : MonoBehaviour {
         }
 
         Physics.Raycast(ray, out hit, Mathf.Infinity, mask);
+
+        raycastCache.Add(mask, hit);
+
         return hit;
 
     }

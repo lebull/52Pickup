@@ -52,7 +52,7 @@ public class InputManager : MonoBehaviour {
         if (Input.GetMouseButton(0))
         {
             //Track our touches however we need to here.
-            Debug.Log(Input.mousePosition);
+            //Debug.Log(Input.mousePosition);
         }
 
         if (Input.GetMouseButtonUp(0))
