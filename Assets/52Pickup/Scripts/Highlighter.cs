@@ -12,13 +12,16 @@ public class Highlighter : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        raycastManager = FindObjectOfType<RaycastManager>();
-        highlightObjectRenderer = highlightObject.GetComponent<MeshRenderer>();
-        highlighted = highlightObjectRenderer.enabled;
+        setHighlight(false);
     }
-	
-	// Update is called once per frame
-	void Update () {
+
+    public void setHighlight(bool highlight)
+    {
+        highlightObject.GetComponent<MeshRenderer>().enabled = highlight;
+    }
+
+    // Update is called once per frame
+    void Update () {
         /*
         if (raycastManager) {
 

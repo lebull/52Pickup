@@ -110,6 +110,7 @@ public class CardHand : MonoBehaviour {
         {
             addCardObject.GetComponent<CardDeck>().flip();
         }
+
         addCardObject.transform.parent = gameObject.transform;
         addCardObject.GetComponent<CardDeck>().parentHand = gameObject;
         updateCardPositions();
@@ -122,17 +123,27 @@ public class CardHand : MonoBehaviour {
         updateCardPositions();
     }
 
+    public void releaseCard(GameObject cardDeck)
+    {
+        removeCardWithReference(cardDeck);
+        cardDeck.transform.parent = null;
+        cardDeck.GetComponent<CardDeck>().parentHand = null;
+
+        heldCards.Remove(cardDeck);
+        updateCardPositions();
+    }
+
     public void condenseAllCardsToDeck()
     {
         if (heldCards.Count > 0)
         {
-            GameObject newCard = (GameObject)Instantiate(FindObjectOfType<CardSetManager>().cardPrefab, transform.position, transform.rotation);
-
+            //GameObject newCard = (GameObject)Instantiate(FindObjectOfType<CardSetManager>().cardPrefab, transform.position, transform.rotation);
+            GameObject newCard = heldCards[0];
             List<int> cardIndexes = new List<int>();
 
-            while(heldCards.Count > 0)
+            while(heldCards.Count > 1)
             {
-                GameObject card = heldCards[0];
+                GameObject card = heldCards[1];
                 cardIndexes.AddRange(card.GetComponent<CardDeck>().cards);
                 heldCards.Remove(card);
                 Destroy(card);
@@ -141,8 +152,8 @@ public class CardHand : MonoBehaviour {
 
             newCard.GetComponent<CardDeck>().setCards(cardIndexes);
 
-            newCard.transform.parent = gameObject.transform;
-            newCard.GetComponent<CardDeck>().parentHand = gameObject;
+            //newCard.transform.parent = gameObject.transform;
+            //newCard.GetComponent<CardDeck>().parentHand = gameObject;
             heldCards = new List<GameObject>() { newCard };
 
             updateCardPositions();

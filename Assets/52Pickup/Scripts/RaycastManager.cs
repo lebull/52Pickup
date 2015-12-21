@@ -60,7 +60,7 @@ public class RaycastManager : MonoBehaviour {
 
         switch (aimMode){
             case AimMode.gaze:
-                ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height*3 / 5));
+                ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, (Screen.height*6 / 10)));
                 break;
             case AimMode.mouse:
                 ray = Camera.main.ScreenPointToRay(Input.mousePosition);

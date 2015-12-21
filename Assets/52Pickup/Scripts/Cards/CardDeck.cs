@@ -9,11 +9,11 @@ using System.Collections.Generic;
 
 public class CardDeck : MonoBehaviour {
 
-    [SerializeField] GameObject cardSetManager;
+    public GameObject cardSetManager;
 
     public GameObject parentHand;
 
-    public List<int> cards;
+    public List<int> cards { get; private set; }
 
     public bool inverted { get{return GetComponent<HoverHandle>().inverted;}}
     
@@ -40,12 +40,14 @@ public class CardDeck : MonoBehaviour {
         int randomIndex = 0;
         while (cards.Count > 0)
         {
-            randomIndex = (int)Random.Range(0, cards.Count - 1); //Choose a random object in the list
+            randomIndex = (int)Random.Range(0, cards.Count); //Choose a random object in the list
             newList.Add(cards[randomIndex]); //add it to the new, random list
             cards.RemoveAt(randomIndex); //remove to avoid duplicates
         }
 
         cards = newList;
+
+        refreshCardFace();
     }
 
     public GameObject draw(bool fromBottom = false)
@@ -106,24 +108,19 @@ public class CardDeck : MonoBehaviour {
             newCard.GetComponent<CardDeck>().flip();
         }
 
-        /*
+        
         //If new count == 0, destroy myself.
+        //Do not change this behavior unless you want the ghost to haunt you.
         if(newCardCount == 0)
         {
             Destroy(gameObject);
         }
         else {
             refreshCardFace();
-        }*/
+        }
 
-        if (newCardCount == 0)
-        {
-            return gameObject;
-        }
-        else
-        {
-            refreshCardFace();
-        }
+        newCard.GetComponent<CardDeck>().cardSetManager = cardSetManager;
+        cardSetManager.GetComponent<CardSetManager>().activeCards.Add(newCard);
 
         return newCard;
     }
@@ -162,6 +159,9 @@ public class CardDeck : MonoBehaviour {
             GetComponent<MeshRenderer>().enabled = true;
         }
 
+        //Set global scale
+        //Vector3 relativeScale = 
+
         transform.localScale = new Vector3(
             transform.localScale.x,
             Mathf.Sqrt(cards.Count) * cardHeight,
@@ -191,8 +191,6 @@ public class CardDeck : MonoBehaviour {
         while (Vector3.Distance(transform.position, targetDeck.transform.position) > 0.05f
             && Time.time - startTime < 0.5f)
         {
-            
-            Debug.Log(targetDeck.transform.rotation.eulerAngles);
             GetComponent<HoverHandle>().setHoverPosition(targetDeck.transform.position, targetDeck.transform.rotation);
             yield return new WaitForFixedUpdate();
         }
@@ -205,21 +203,11 @@ public class CardDeck : MonoBehaviour {
         GetComponent<HoverHandle>().flip();
     }
 
-    public void removeFromHand()
-    {
-        if(parentHand != null)
-        {
-            parentHand.GetComponent<CardHand>().removeCardWithReference(gameObject);
-            transform.parent = null;
-        }
-
-    }
-
     void OnDestroy()
     {
         if(parentHand != null)
         {
-            removeFromHand();
+            parentHand.GetComponent<CardHand>().removeCardWithReference(gameObject);
         }
 
     }

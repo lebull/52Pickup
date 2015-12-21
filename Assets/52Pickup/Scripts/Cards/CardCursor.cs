@@ -12,7 +12,6 @@ public class CardCursor : MonoBehaviour {
 
     public GameObject heldObject;
 
-
     private int heldObjectOrigionalLayer;
 
 	// Use this for initialization
@@ -26,14 +25,20 @@ public class CardCursor : MonoBehaviour {
         transform.rotation = transform.parent.rotation;
         updatePositionToGaze();
 
+        RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
+        RaycastHit handHit = FindObjectOfType<RaycastManager>().raycastHand();
 
+        //Testing for Gaze
+        if (cardHit.collider)
+        {
+            CardPreview cardPreview = FindObjectOfType<CardPreview>();
+            cardPreview.previewCard(cardHit.collider.gameObject);
+        }
 
         //Swipe Down
-        
         if (inputManager.swipeDown)
         {
             //Pick up card
-            RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
             if (cardHit.collider
                 && cardHit.collider.gameObject.layer == LayerMask.NameToLayer("Card")
                 && cardHit.collider.gameObject.GetComponent<HoverHandle>() != null)
@@ -78,18 +83,22 @@ public class CardCursor : MonoBehaviour {
             if (heldObject == null)
             {
 
-                //If we're pointing at a hand
-                RaycastHit handHit = FindObjectOfType<RaycastManager>().raycastHand();
+                //If we're pointing at a hand marker
                 if (handHit.collider)
                 {
-                    handHit.collider.gameObject.GetComponent<CardHand>().condenseAllCardsToDeck();
-                    pickUpObject(handHit.collider.gameObject.GetComponent<CardHand>().heldCards[0]);
+                    CardHand hand = handHit.collider.gameObject.GetComponent<CardHand>();
+                    hand.condenseAllCardsToDeck();
+                    
+                    if(hand.heldCards.Count > 0)
+                    {
+                        pickUpObject(hand.heldCards[0]);
+                    } 
+                    
 
                 }
                 else
                 {
                     //If we are pointing at a CardDeck
-                    RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
                     if (cardHit.collider && cardHit.collider.gameObject.GetComponent<CardDeck>())
                     {
                         pickUpObject(cardHit.collider.gameObject);
@@ -101,15 +110,13 @@ public class CardCursor : MonoBehaviour {
                 && heldObject.GetComponent<CardDeck>() != null)
             {
                 //If we're pointing at a hand
-                RaycastHit handHit = FindObjectOfType<RaycastManager>().raycastHand();
                 if (handHit.collider)
                 {
-                    handHit.collider.gameObject.GetComponent<CardHand>().addCard(heldObject);
+                    GameObject toHandObject = releaseObject();
+                    handHit.collider.gameObject.GetComponent<CardHand>().addCard(toHandObject);
                 }
-
                 //If we're pointing at a CardDeck
-                RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
-                if (cardHit.collider && cardHit.collider.gameObject != heldObject)
+                else if (cardHit.collider && cardHit.collider.gameObject != heldObject)
                 {
                     //If it's in a hand
                     if(cardHit.collider.gameObject.GetComponent<CardDeck>().parentHand != null)
@@ -154,7 +161,12 @@ public class CardCursor : MonoBehaviour {
     void pickUpObject(GameObject pickupObject)
     {
         //If it's in a hand, it needs to be removed
-        pickupObject.GetComponent<CardDeck>().removeFromHand();
+        CardDeck cardDeck = pickupObject.GetComponent<CardDeck>();
+        if(cardDeck.parentHand)
+        {
+            cardDeck.parentHand.GetComponent<CardHand>().releaseCard(pickupObject);
+        }
+       
 
         heldObject = pickupObject;
         heldObjectOrigionalLayer = heldObject.layer;
@@ -162,7 +174,7 @@ public class CardCursor : MonoBehaviour {
         heldObject.layer = LayerMask.NameToLayer("IgnoreRaycast");
     }
 
-    void releaseObject()
+    GameObject releaseObject()
     {
         //Reset the layer in case it needs to be raycasted
         heldObject.layer = heldObjectOrigionalLayer;
@@ -173,31 +185,42 @@ public class CardCursor : MonoBehaviour {
             heldObject.transform.parent = null;
         }
 
+        GameObject returnObject = heldObject;
+
         heldObject = null;
+
+        return returnObject;
+        
     }
 
     void updatePositionToGaze()
     {
-        RaycastHit hit = FindObjectOfType<RaycastManager>().raycastGeneral();
-        if (hit.collider)
+        RaycastHit tableHit = FindObjectOfType<RaycastManager>().raycastTable();
+        RaycastHit cardHit = FindObjectOfType<RaycastManager>().raycastCard();
+        RaycastHit handHit = FindObjectOfType<RaycastManager>().raycastHand();
+        //If we're hitting something, move our position directly above it.
+
+        /*
+        if (cardHit.collider)
         {
-            //Hide cursor if we hit a card.
-            if(hit.collider.gameObject.layer == LayerMask.NameToLayer("Card"))
-            {
-                GetComponent<MeshRenderer>().enabled = false;
-            }
-            else
-            {
-                GetComponent<MeshRenderer>().enabled = true;
-            }
-            
-            transform.position = hit.point + hit.normal*hitOffset;
-            transform.rotation = Quaternion.Euler(hit.normal);
+            transform.position = cardHit.transform.position;
+            GetComponent<MeshRenderer>().enabled = false; //Hide curser renderer
+        }
+        else*/ if (handHit.collider)
+        {
+            transform.position = handHit.transform.position;
+            GetComponent<MeshRenderer>().enabled = false; //Hide curser renderer
+        }
+        else if (tableHit.collider)
+        {
+            transform.position = tableHit.point + tableHit.normal * hitOffset;
+            transform.rotation = Quaternion.Euler(tableHit.normal);
+            GetComponent<MeshRenderer>().enabled = true;
         }
         else
         {
-            GetComponent<MeshRenderer>().enabled = true;
-            transform.position = defaultCursorLocation.transform.position;
+            GetComponent<MeshRenderer>().enabled = false;
+            //transform.position = defaultCursorLocation.transform.position;
         }
     }
 }
